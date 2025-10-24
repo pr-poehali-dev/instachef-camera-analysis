@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Camera, ChevronLeft, Clock, Flame, Minus, Plus, Salad, User } from 'lucide-react';
+import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
-type Screen = 'camera' | 'analysis' | 'recipes';
+type Screen = 'camera' | 'analysis' | 'recipes' | 'cooking' | 'share' | 'profile';
 
 type DietStyle = 'normal' | 'diet' | 'vegan' | 'eco';
 
@@ -25,9 +26,20 @@ interface Recipe {
   style: DietStyle;
 }
 
+interface CookingStep {
+  id: string;
+  number: number;
+  text: string;
+  duration?: string;
+}
+
 export default function Index() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('camera');
   const [selectedStyle, setSelectedStyle] = useState<DietStyle>('normal');
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  
   const [ingredients, setIngredients] = useState<Ingredient[]>([
     {
       id: '1',
@@ -86,6 +98,14 @@ export default function Index() {
     }
   ];
 
+  const cookingSteps: CookingStep[] = [
+    { id: '1', number: 1, text: 'Нарежьте помидоры и сыр моцарелла кружками одинаковой толщины', duration: '3 мин' },
+    { id: '2', number: 2, text: 'Выложите на тарелку чередуя: помидор, моцарелла, помидор', duration: '2 мин' },
+    { id: '3', number: 3, text: 'Приготовьте соус песто: смешайте базилик, чеснок и оливковое масло', duration: '5 мин' },
+    { id: '4', number: 4, text: 'Полейте блюдо соусом песто', duration: '1 мин' },
+    { id: '5', number: 5, text: 'Украсьте свежими листьями базилика и подавайте', duration: '1 мин' }
+  ];
+
   const dietStyles: { value: DietStyle; label: string }[] = [
     { value: 'normal', label: 'Обычное' },
     { value: 'diet', label: 'Диета' },
@@ -111,29 +131,56 @@ export default function Index() {
     setCurrentScreen('recipes');
   };
 
+  const startCooking = (recipe: Recipe) => {
+    setSelectedRecipe(recipe);
+    setCurrentScreen('cooking');
+    setCurrentStep(0);
+  };
+
+  const nextStep = () => {
+    if (currentStep < cookingSteps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const generateVideo = () => {
+    setCurrentScreen('share');
+  };
+
   return (
     <div className="min-h-screen bg-[#1A1A2E] text-white">
       {currentScreen === 'camera' && (
         <div className="relative h-screen flex flex-col">
           <div className="absolute top-0 left-0 right-0 z-10 p-6 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF8C42] to-[#FFD93D] flex items-center justify-center text-2xl font-bold">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF8C42] to-[#FFD93D] flex items-center justify-center text-2xl font-bold text-[#1A1A2E]">
                 I
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-[#FF8C42] to-[#FFD93D] bg-clip-text text-transparent">
                 InstaChef
               </h1>
             </div>
-            <Button variant="ghost" size="icon" className="text-white">
-              <User className="w-6 h-6" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-white hover:bg-white/10"
+              onClick={() => setCurrentScreen('profile')}
+            >
+              <Icon name="User" size={24} />
             </Button>
           </div>
 
           <div className="flex-1 relative bg-gradient-to-b from-black/40 to-black/20 flex items-center justify-center">
             <div className="w-full max-w-md mx-4">
               <div className="glass aspect-[4/3] rounded-3xl overflow-hidden border-4 border-white/20 relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#1A1A2E]/50 to-[#6F4E37]/30 flex items-center justify-center">
-                  <Camera className="w-24 h-24 text-white/30" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#1A1A2E]/50 to-[#11A1A3E]/30 flex items-center justify-center">
+                  <Icon name="Camera" size={96} className="text-white/30" />
                 </div>
                 <div className="absolute inset-0 border-2 border-dashed border-white/30 m-8 rounded-2xl"></div>
               </div>
@@ -149,7 +196,7 @@ export default function Index() {
               size="lg"
               className="w-24 h-24 rounded-full mx-auto block bg-gradient-to-r from-[#FF8C42] to-[#FFD93D] hover:from-[#FF7A30] hover:to-[#FFC71B] text-[#1A1A2E] font-semibold shadow-2xl shadow-[#FF8C42]/50 transition-all hover:scale-105"
             >
-              <Camera className="w-10 h-10" />
+              <Icon name="Camera" size={40} />
             </Button>
           </div>
         </div>
@@ -184,7 +231,7 @@ export default function Index() {
                           className="h-8 w-8 rounded-full border-[#FF8C42] text-[#FF8C42] hover:bg-[#FF8C42] hover:text-white"
                           onClick={() => updateGrams(ingredient.id, -10)}
                         >
-                          <Minus className="w-4 h-4" />
+                          <Icon name="Minus" size={16} />
                         </Button>
                         <span className="font-semibold w-16 text-center">{ingredient.grams}г</span>
                         <Button
@@ -193,15 +240,15 @@ export default function Index() {
                           className="h-8 w-8 rounded-full border-[#FF8C42] text-[#FF8C42] hover:bg-[#FF8C42] hover:text-white"
                           onClick={() => updateGrams(ingredient.id, 10)}
                         >
-                          <Plus className="w-4 h-4" />
+                          <Icon name="Plus" size={16} />
                         </Button>
                       </div>
 
-                      <div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-[#FF8C42] to-[#FFD93D]"
-                          style={{ width: `${Math.min((ingredient.calories / 500) * 100, 100)}%` }}
-                        ></div>
+                      <div className="mt-2">
+                        <Progress 
+                          value={Math.min((ingredient.calories / 500) * 100, 100)} 
+                          className="h-1.5 bg-white/10"
+                        />
                       </div>
                     </div>
                   </div>
@@ -247,10 +294,10 @@ export default function Index() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white"
+                className="text-white hover:bg-white/10"
                 onClick={() => setCurrentScreen('analysis')}
               >
-                <ChevronLeft className="w-6 h-6" />
+                <Icon name="ChevronLeft" size={24} />
               </Button>
               <div>
                 <h2 className="text-3xl font-bold">Подходящие блюда</h2>
@@ -277,21 +324,22 @@ export default function Index() {
                     <h3 className="text-xl font-bold mb-3">{recipe.name}</h3>
                     <div className="flex items-center gap-4 text-sm text-white/70 mb-4">
                       <div className="flex items-center gap-1.5">
-                        <Clock className="w-4 h-4" />
+                        <Icon name="Clock" size={16} />
                         <span>{recipe.time}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Flame className="w-4 h-4 text-[#FF8C42]" />
+                        <Icon name="Flame" size={16} className="text-[#FF8C42]" />
                         <span>{recipe.calories} ккал</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Salad className="w-4 h-4 text-[#FFD93D]" />
+                        <Icon name="Salad" size={16} className="text-[#FFD93D]" />
                         <span className="capitalize">{dietStyles.find(s => s.value === recipe.style)?.label}</span>
                       </div>
                     </div>
                     <div className="flex gap-3">
                       <Button
                         className="flex-1 bg-gradient-to-r from-[#FF8C42] to-[#FFD93D] hover:from-[#FF7A30] hover:to-[#FFC71B] text-[#1A1A2E] font-semibold"
+                        onClick={() => startCooking(recipe)}
                       >
                         👨‍🍳 Пошагово
                       </Button>
@@ -311,6 +359,312 @@ export default function Index() {
                   </div>
                 </Card>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {currentScreen === 'cooking' && selectedRecipe && (
+        <div className="min-h-screen pb-24 animate-fade-in">
+          <div className="relative h-64 overflow-hidden">
+            <img
+              src={selectedRecipe.image}
+              alt={selectedRecipe.name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-[#1A1A2E]"></div>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-6 left-6 text-white hover:bg-white/10"
+              onClick={() => setCurrentScreen('recipes')}
+            >
+              <Icon name="ChevronLeft" size={24} />
+            </Button>
+
+            <div className="absolute bottom-6 left-6 right-6">
+              <h2 className="text-2xl font-bold mb-2">{selectedRecipe.name}</h2>
+              <div className="flex items-center gap-4 text-sm text-white/80">
+                <span className="flex items-center gap-1">
+                  <Icon name="Clock" size={16} />
+                  {selectedRecipe.time}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Icon name="Flame" size={16} />
+                  {selectedRecipe.calories} ккал
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="max-w-2xl mx-auto px-6 py-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold">Шаги приготовления</h3>
+              <span className="text-white/60 text-sm">Шаг {currentStep + 1} из {cookingSteps.length}</span>
+            </div>
+
+            <Progress 
+              value={((currentStep + 1) / cookingSteps.length) * 100} 
+              className="mb-8 h-2 bg-white/10"
+            />
+
+            <div className="space-y-4 mb-8">
+              {cookingSteps.map((step, index) => (
+                <Card
+                  key={step.id}
+                  className={`glass-dark border-white/10 p-5 transition-all ${
+                    index === currentStep 
+                      ? 'border-[#FF8C42] shadow-lg shadow-[#FF8C42]/20 scale-105' 
+                      : index < currentStep 
+                        ? 'opacity-50' 
+                        : 'opacity-30'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-bold ${
+                      index <= currentStep 
+                        ? 'bg-gradient-to-r from-[#FF8C42] to-[#FFD93D] text-[#1A1A2E]' 
+                        : 'bg-white/10 text-white/50'
+                    }`}>
+                      {index < currentStep ? '✓' : step.number}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-base mb-2">{step.text}</p>
+                      {step.duration && (
+                        <div className="flex items-center gap-2 text-sm text-white/60">
+                          <Icon name="Timer" size={14} />
+                          <span>{step.duration}</span>
+                        </div>
+                      )}
+                    </div>
+                    {index === currentStep && (
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="border-white/20 text-white hover:bg-white/10"
+                        onClick={() => setIsPlaying(!isPlaying)}
+                      >
+                        <Icon name={isPlaying ? "Pause" : "Volume2"} size={20} />
+                      </Button>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            <div className="flex gap-3 sticky bottom-6">
+              <Button
+                variant="outline"
+                size="lg"
+                className="flex-1 border-white/20 text-white hover:bg-white/10"
+                onClick={prevStep}
+                disabled={currentStep === 0}
+              >
+                <Icon name="ChevronLeft" size={20} />
+                Назад
+              </Button>
+              {currentStep < cookingSteps.length - 1 ? (
+                <Button
+                  size="lg"
+                  className="flex-1 bg-gradient-to-r from-[#FF8C42] to-[#FFD93D] hover:from-[#FF7A30] hover:to-[#FFC71B] text-[#1A1A2E] font-semibold"
+                  onClick={nextStep}
+                >
+                  Далее
+                  <Icon name="ChevronRight" size={20} />
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  className="flex-1 bg-gradient-to-r from-[#FF8C42] to-[#FFD93D] hover:from-[#FF7A30] hover:to-[#FFC71B] text-[#1A1A2E] font-semibold"
+                  onClick={generateVideo}
+                >
+                  🎬 Сделать видео
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {currentScreen === 'share' && selectedRecipe && (
+        <div className="min-h-screen p-6 pb-24 animate-fade-in flex items-center justify-center">
+          <div className="max-w-md mx-auto w-full">
+            <div className="text-center mb-8">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/10 mb-4"
+                onClick={() => setCurrentScreen('cooking')}
+              >
+                <Icon name="ChevronLeft" size={24} />
+              </Button>
+              <h2 className="text-3xl font-bold mb-2">Твое видео готово!</h2>
+              <p className="text-white/60 text-sm">AI-ролик на основе твоих ингредиентов и рецепта</p>
+            </div>
+
+            <Card className="glass-dark border-white/10 overflow-hidden mb-8 animate-scale-in">
+              <div className="aspect-[9/16] relative bg-gradient-to-br from-[#1A1A2E] to-[#11A1A3E] flex items-center justify-center">
+                <img
+                  src={selectedRecipe.image}
+                  alt={selectedRecipe.name}
+                  className="w-full h-full object-cover opacity-80"
+                />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <Button
+                    size="icon"
+                    className="w-20 h-20 rounded-full bg-gradient-to-r from-[#FF8C42] to-[#FFD93D] hover:from-[#FF7A30] hover:to-[#FFC71B] text-[#1A1A2E] shadow-2xl shadow-[#FF8C42]/50"
+                  >
+                    <Icon name="Play" size={32} />
+                  </Button>
+                </div>
+                <div className="absolute bottom-4 left-4 right-4 text-center">
+                  <h3 className="font-bold text-lg mb-1">{selectedRecipe.name}</h3>
+                  <p className="text-sm text-white/80">15 сек • InstaChef AI</p>
+                </div>
+              </div>
+            </Card>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-center mb-4">Поделиться в соцсетях</h3>
+              
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <button className="flex flex-col items-center gap-2 p-4 glass-dark rounded-2xl border border-white/10 hover:border-[#FF8C42] transition-all hover:scale-105">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 flex items-center justify-center">
+                    <Icon name="Instagram" size={28} fallback="Camera" />
+                  </div>
+                  <span className="text-xs">Instagram</span>
+                </button>
+
+                <button className="flex flex-col items-center gap-2 p-4 glass-dark rounded-2xl border border-white/10 hover:border-[#FF8C42] transition-all hover:scale-105">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-pink-500 flex items-center justify-center">
+                    <Icon name="Music" size={28} />
+                  </div>
+                  <span className="text-xs">TikTok</span>
+                </button>
+
+                <button className="flex flex-col items-center gap-2 p-4 glass-dark rounded-2xl border border-white/10 hover:border-[#FF8C42] transition-all hover:scale-105">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                    <Icon name="Send" size={28} />
+                  </div>
+                  <span className="text-xs">Telegram</span>
+                </button>
+
+                <button className="flex flex-col items-center gap-2 p-4 glass-dark rounded-2xl border border-white/10 hover:border-[#FF8C42] transition-all hover:scale-105">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#FF8C42] to-[#FFD93D] flex items-center justify-center">
+                    <Icon name="Download" size={28} className="text-[#1A1A2E]" />
+                  </div>
+                  <span className="text-xs">Сохранить</span>
+                </button>
+              </div>
+
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full border-white/20 text-white hover:bg-white/10"
+                onClick={() => setCurrentScreen('cooking')}
+              >
+                🔁 Создать заново
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {currentScreen === 'profile' && (
+        <div className="min-h-screen p-6 pb-24 animate-fade-in">
+          <div className="max-w-2xl mx-auto">
+            <div className="flex items-center justify-between mb-8 mt-4">
+              <h2 className="text-3xl font-bold">Профиль</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/10"
+                onClick={() => setCurrentScreen('camera')}
+              >
+                <Icon name="X" size={24} />
+              </Button>
+            </div>
+
+            <Card className="glass-dark border-white/10 p-6 mb-6 animate-scale-in">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FF8C42] to-[#FFD93D] flex items-center justify-center text-3xl font-bold text-[#1A1A2E]">
+                  Г
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold mb-1">Гость</h3>
+                  <p className="text-white/60 text-sm">Войди, чтобы сохранить историю</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-[#FF8C42] to-[#FFD93D] hover:from-[#FF7A30] hover:to-[#FFC71B] text-[#1A1A2E] font-semibold justify-start"
+                >
+                  <Icon name="LogIn" size={20} />
+                  Войти через Google
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full border-white/20 text-white hover:bg-white/10 justify-start"
+                >
+                  <Icon name="Apple" size={20} fallback="Smartphone" />
+                  Войти через Apple ID
+                </Button>
+              </div>
+            </Card>
+
+            <div className="space-y-3">
+              <Card className="glass-dark border-white/10 p-4 flex items-center justify-between hover:border-[#FF8C42] transition-all cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <Icon name="Crown" size={20} className="text-[#FFD93D]" />
+                  <div>
+                    <h4 className="font-semibold">Подписка Premium</h4>
+                    <p className="text-sm text-white/60">Безлимитные рецепты и видео</p>
+                  </div>
+                </div>
+                <Icon name="ChevronRight" size={20} className="text-white/40" />
+              </Card>
+
+              <Card className="glass-dark border-white/10 p-4 flex items-center justify-between hover:border-[#FF8C42] transition-all cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <Icon name="History" size={20} className="text-[#FF8C42]" />
+                  <div>
+                    <h4 className="font-semibold">История блюд</h4>
+                    <p className="text-sm text-white/60">Твои последние рецепты</p>
+                  </div>
+                </div>
+                <Icon name="ChevronRight" size={20} className="text-white/40" />
+              </Card>
+
+              <Card className="glass-dark border-white/10 p-4 flex items-center justify-between hover:border-[#FF8C42] transition-all cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <Icon name="Volume2" size={20} className="text-[#FF8C42]" />
+                  <div>
+                    <h4 className="font-semibold">Язык и голос озвучки</h4>
+                    <p className="text-sm text-white/60">Русский • Женский голос</p>
+                  </div>
+                </div>
+                <Icon name="ChevronRight" size={20} className="text-white/40" />
+              </Card>
+
+              <Card className="glass-dark border-white/10 p-4 flex items-center justify-between hover:border-[#FF8C42] transition-all cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <Icon name="Trash2" size={20} className="text-red-400" />
+                  <div>
+                    <h4 className="font-semibold">Удалить данные</h4>
+                    <p className="text-sm text-white/60">Очистить все сохраненные рецепты</p>
+                  </div>
+                </div>
+                <Icon name="ChevronRight" size={20} className="text-white/40" />
+              </Card>
+            </div>
+
+            <div className="mt-8 text-center text-white/40 text-sm">
+              <p>InstaChef AI v1.0.0</p>
+              <p className="mt-1">© 2025 InstaChef. Все права защищены</p>
             </div>
           </div>
         </div>
